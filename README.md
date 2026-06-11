@@ -30,3 +30,17 @@ See [tutorial](tutorial.ipynb)
 ## Funding
 
 This work is funded as a project in cooperation between TU Berlin and MAN Truck & Bus SE.
+
+## Citation
+
+```
+@misc{gorelik2026multiviewincabinmonitoringpublic,
+      title={Multi-View In-Cabin Monitoring System for Public Transport Vehicles}, 
+      author={Evgeny Gorelik and Kenny Dean Karrow and Fikret Sivrikaya and Sahin Albayrak and Christian Baumann},
+      year={2026},
+      eprint={2606.11739},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2606.11739}, 
+}
+```
