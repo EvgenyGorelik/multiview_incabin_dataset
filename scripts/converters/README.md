@@ -44,3 +44,12 @@ Convert using:
 ```
 python convert_rosbag.py
 ```
+
+
+## NuScenes Export
+
+Export `NDFDataset` to NuScenes Format (Version `v1.0-mini`)
+
+```
+python export_nuscenes.py <path/to/dataset>
+```
