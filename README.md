@@ -19,8 +19,14 @@ cd multiview_incabin_dataset
 pip install .
 ```
 
-The dataset can be downloaded [here](
-https://zenodo.org/records/20559664?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjRhMDg0M2RiLTgyZTItNGJmNC1iNTk4LTM3OTk2N2U3N2Q0ZSIsImRhdGEiOnt9LCJyYW5kb20iOiI3MTZjMTU1ZDgwZDNmZmFiNmUzMDY5MmFkM2YzZGJjYSJ9.C1qemRRecTB5cWshlm-09ElAlYB2Uix-otwhTaBN97iEFQYq7ogPE8EsFBPU0VgkuXDfsNcEeUrr0Fa1R8Jofg).
+The dataset can be downloaded 
+... on [Zenodo](
+https://zenodo.org/records/20559664?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjRhMDg0M2RiLTgyZTItNGJmNC1iNTk4LTM3OTk2N2U3N2Q0ZSIsImRhdGEiOnt9LCJyYW5kb20iOiI3MTZjMTU1ZDgwZDNmZmFiNmUzMDY5MmFkM2YzZGJjYSJ9.C1qemRRecTB5cWshlm-09ElAlYB2Uix-otwhTaBN97iEFQYq7ogPE8EsFBPU0VgkuXDfsNcEeUrr0Fa1R8Jofg)
+
+OR 
+
+... on [huggingface](https://huggingface.co/datasets/evgenygorelik96/multiview_incabin_dataset)
+
 
 ## How To Use
 
