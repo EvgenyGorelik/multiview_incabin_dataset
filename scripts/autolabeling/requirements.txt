@@ -1,0 +1,8 @@
+torch==2.4.0
+torchvision==0.19.0
+torchaudio==2.4.0
+transformers==5.3.0
+cython_bbox==0.1.5
+lap==0.5.13
+loguru==0.7.3
+git+https://github.com/ifzhang/ByteTrack.git

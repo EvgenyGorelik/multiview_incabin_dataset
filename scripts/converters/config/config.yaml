@@ -1,0 +1,68 @@
+input_bags:
+ - /home/ndf/data/rosbag2_2026_05_21-09_10_44
+ - /home/ndf/data/rosbag2_2026_05_21-09_15_06
+ - /home/ndf/data/rosbag2_2026_05_21-09_21_59
+ - /home/ndf/data/rosbag2_2026_05_21-09_24_35
+ - /home/ndf/data/rosbag2_2026_05_21-09_27_19
+ - /home/ndf/data/rosbag2_2026_05_21-09_28_32
+ - /home/ndf/data/rosbag2_2026_05_21-09_32_27
+ - /home/ndf/data/rosbag2_2026_05_21-09_34_14
+ - /home/ndf/data/rosbag2_2026_05_21-09_36_03
+ - /home/ndf/data/rosbag2_2026_05_21-09_37_12
+ - /home/ndf/data/rosbag2_2026_05_21-09_40_56
+output_path: /data/ndf/beintelli_v1
+
+cameras:
+      - front_left_color:
+            topic: /edge_3/camera/color/image_raw/compressed
+            frame_id: edge_3_color_optical_frame
+            compressed: true
+            camera_info_topic: /edge_3/camera/color/camera_info
+            camera_type: color
+      - front_right_color:
+            topic: /edge_1/camera/color/image_raw/compressed
+            frame_id: edge_1_color_optical_frame
+            compressed: true
+            camera_info_topic: /edge_1/camera/color/camera_info
+            camera_type: color
+      - center_left_color:
+            topic: /edge_0/camera/color/image_raw/compressed
+            frame_id: edge_0_color_optical_frame
+            compressed: true
+            camera_info_topic: /edge_0/camera/color/camera_info
+            camera_type: color
+      - back_right_color:
+            topic: /edge_5/camera/color/image_raw/compressed
+            frame_id: edge_5_color_optical_frame
+            compressed: true
+            camera_info_topic: /edge_5/camera/color/camera_info
+            camera_type: color
+      - front_left_depth:
+            topic: /edge_3/camera/depth/image_rect_raw/compressed
+            frame_id: edge_3_depth_optical_frame
+            compressed: true
+            camera_info_topic: /edge_3/camera/depth/camera_info
+            camera_type: depth
+      - front_right_depth:
+            topic: /edge_1/camera/depth/image_rect_raw/compressed
+            frame_id: edge_1_depth_optical_frame
+            compressed: true
+            camera_info_topic: /edge_1/camera/depth/camera_info
+            camera_type: depth
+      - center_left_depth:
+            topic: /edge_0/camera/depth/image_rect_raw/compressed
+            frame_id: edge_0_depth_optical_frame
+            compressed: true
+            camera_info_topic: /edge_0/camera/depth/camera_info
+            camera_type: depth
+      - back_right_depth:
+            topic: /edge_5/camera/depth/image_rect_raw/compressed
+            frame_id: edge_5_depth_optical_frame
+            compressed: true
+            camera_info_topic: /edge_5/camera/depth/camera_info
+            camera_type: depth
+lidar:
+    topic: /ouster/points
+    frame_id: os_lidar
+target_frame: base_link
+urdf_path: urdf/beintelli_v1.urdf
