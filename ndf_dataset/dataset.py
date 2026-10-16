@@ -38,6 +38,9 @@ class NDFDataset:
         self._scan()
         if self.lidar_scans:
             self.timestamps = sorted(self.lidar_scans)
+        elif os.path.exists(os.path.join(self.root, 'timestamps.json')):
+            with open(os.path.join(self.root, 'timestamps.json'), 'r') as fp:
+                self.timestamps = json.load(fp)
         else:
             self.timestamps = sorted({
                 ts
