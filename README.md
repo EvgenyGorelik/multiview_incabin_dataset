@@ -32,6 +32,25 @@ OR
 
 See [tutorial](tutorial.ipynb)
 
+`NDFDataset(root)` uses LiDAR scan timestamps when scans are present. If the
+`lidar/` directory is missing or contains no scans, it builds samples from the
+sorted, unique image timestamps across all camera types and cameras. Each sample
+uses the nearest image from each available camera, so asynchronous camera
+streams can produce samples with repeated images from other views.
+
+Camera-only samples work with `get_sample_files(timestamp)`,
+`get_sample(timestamp)`, and indexed access (`dataset[i]`). Missing LiDAR data
+and its timestamp are returned as `None`; missing camera types are returned as
+empty dictionaries. Without LiDAR, poses, 3D boxes, and states are looked up at
+the requested sample timestamp. Missing annotations remain `None` (or empty
+lists for per-camera annotations).
+
+Run the sampling regression tests with:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
 
 ## Funding
 

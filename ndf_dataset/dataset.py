@@ -37,9 +37,14 @@ class NDFDataset:
         self._load_modalities()
         self._scan()
         if self.lidar_scans:
-            self.timestamps = sorted(set([ts for ts in self.lidar_scans.keys()]))
+            self.timestamps = sorted(self.lidar_scans)
         else:
-            self.timestamps = sorted(set([ts for cam in self.cameras.values() for ts, _ in cam["images"]]))
+            self.timestamps = sorted({
+                ts
+                for cameras in self.cameras.values()
+                for cam in cameras.values()
+                for ts, _ in cam.get("images", [])
+            })
         self.cameras = dict(self.cameras)
 
     def _load_frame_id_map(self):
@@ -237,14 +242,10 @@ class NDFDataset:
             return None
         if ts in self.lidar_scans:
             return ts, self.lidar_scans[ts]
-        idx = np.searchsorted([t for t in self.timestamps], ts)
-        cand = []
-        if idx > 0:
-            cand.append(self.lidar_scans[self.timestamps[idx - 1]])
-        if idx < len(self.lidar_scans):
-            cand.append(self.lidar_scans[self.timestamps[min(idx, len(self.lidar_scans) - 1)]])
-        best = min(cand, key=lambda x: abs(x[0] - ts))
-        return best[0], best[1]
+        idx = np.searchsorted(self.timestamps, ts)
+        candidates = self.timestamps[max(0, idx - 1):idx + 1]
+        best_ts = min(candidates, key=lambda t: abs(t - ts))
+        return best_ts, self.lidar_scans[best_ts]
 
     def project_poses_to_image(self, poses, cam_name, key='vertices', return_valid=False, camera_type='color'):
         """
@@ -277,59 +278,65 @@ class NDFDataset:
 
 
     def get_sample_files(self, timestamp) -> Dict:
-        """Return dict with keys 'image_path', 'lidar_path', 'cam_info', 'segmentation_paths' for the specified timestamp."""
+        """Return nearest sensor files; missing LiDAR paths/timestamps are None."""
+        color_cameras = self.cameras.get("color", {})
+        depth_cameras = self.cameras.get("depth", {})
         # find nearest camera image
-        img = {cam_name: None for cam_name in self.cameras['color']}  # cam_name -> image path
-        depth = {cam_name: None for cam_name in self.cameras['depth']}  # cam_name -> depth image path
-        cam_timestamps = {cam_name: None for cam_name in self.cameras['color']}  # cam_name -> timestamp
-        segmentation = {cam_name: [] for cam_name in self.cameras['color']}  # cam_name -> list of segmentation paths
-        bboxes = {cam_name: [] for cam_name in self.cameras['color']}  # cam_name -> list of bounding box paths
-        body = {cam_name: [] for cam_name in self.cameras['color']}  # cam_name -> list of body info paths
+        img = {cam_name: None for cam_name in color_cameras}  # cam_name -> image path
+        depth = {cam_name: None for cam_name in depth_cameras}  # cam_name -> depth image path
+        cam_timestamps = {cam_name: None for cam_name in color_cameras}  # cam_name -> timestamp
+        segmentation = {cam_name: [] for cam_name in color_cameras}  # cam_name -> list of segmentation paths
+        bboxes = {cam_name: [] for cam_name in color_cameras}  # cam_name -> list of bounding box paths
+        body = {cam_name: [] for cam_name in color_cameras}  # cam_name -> list of body info paths
 
-        for cam_name, cam_data in self.cameras['color'].items():
+        for cam_name, cam_data in color_cameras.items():
             for ts, img_path in cam_data.get("images", []):
                 if img[cam_name] is None or abs(ts - timestamp) < abs(cam_timestamps[cam_name] - timestamp):
                     img[cam_name] = img_path
                     cam_timestamps[cam_name] = ts
-                    segmentation[cam_name] = self.cameras['color'][cam_name].get("segmentations", {}).get(ts, [])
-                    bboxes[cam_name] = self.cameras['color'][cam_name].get("bboxes_2d", {}).get(ts, [])
-                    body[cam_name] = self.cameras['color'][cam_name].get("body_3d", {}).get(ts, [])
-        for cam_name, cam_data in self.cameras['depth'].items():
+                    segmentation[cam_name] = cam_data.get("segmentations", {}).get(ts, [])
+                    bboxes[cam_name] = cam_data.get("bboxes_2d", {}).get(ts, [])
+                    body[cam_name] = cam_data.get("body_3d", {}).get(ts, [])
+        depth_timestamps = {}
+        for cam_name, cam_data in depth_cameras.items():
             for ts, depth_path in cam_data.get("images", []):
-                if depth[cam_name] is None or abs(ts - timestamp) < abs(cam_timestamps[cam_name] - timestamp):
+                if depth[cam_name] is None or abs(ts - timestamp) < abs(depth_timestamps[cam_name] - timestamp):
                     depth[cam_name] = depth_path
-                    cam_timestamps[cam_name] = ts
-        if not any(img.values()):
+                    depth_timestamps[cam_name] = ts
+        if not any(img.values()) and not any(depth.values()):
             return None
         
         # find nearest lidar
-        lidar_ts, lidar_path = self.find_nearest_lidar(timestamp)
-        pose_path = self.poses.get(lidar_ts)
-        bboxes_3d_path = self.bboxes_3d.get(lidar_ts)
-        state_path = self.states.get(lidar_ts)
+        nearest_lidar = self.find_nearest_lidar(timestamp)
+        lidar_ts, lidar_path = nearest_lidar if nearest_lidar is not None else (None, None)
+        annotation_ts = lidar_ts if lidar_ts is not None else timestamp
+        pose_path = self.poses.get(annotation_ts)
+        bboxes_3d_path = self.bboxes_3d.get(annotation_ts)
+        state_path = self.states.get(annotation_ts)
 
-        return {"images": img, "depth": depth, "lidar": lidar_path, "segmentations": segmentation, "bboxes_2d": bboxes, "body_3d": body, "bboxes_3d": bboxes_3d_path, "poses": pose_path, "states": state_path, "timestamps": {"lidar": lidar_ts, **cam_timestamps}}
+        return {"images": img, "depth": depth, "lidar": lidar_path, "segmentations": segmentation, "bboxes_2d": bboxes, "body_3d": body, "bboxes_3d": bboxes_3d_path, "poses": pose_path, "states": state_path, "timestamps": {"lidar": lidar_ts, **depth_timestamps, **cam_timestamps}}
 
     def get_sample(self, timestamp) -> Dict:
-        """Return dict with keys 'image_path', 'lidar_path', 'cam_info', 'segmentation_paths' for the specified timestamp."""
+        """Load a sample, returning None for unavailable LiDAR or 3D annotations."""
 
         sample_files = self.get_sample_files(timestamp)
         if sample_files is None:
             return None
 
         # load data for each camera
-        for cam_name in self.cameras['color']:
+        for cam_name in self.cameras.get("color", {}):
             if sample_files["images"][cam_name] is not None:
                 sample_files["images"][cam_name] = load_image(sample_files["images"][cam_name])
                 sample_files["segmentations"][cam_name] = [load_image(p, image_type="segmentation") for p in sample_files["segmentations"][cam_name]]
-                sample_files["bboxes_2d"][cam_name] = load_bounding_boxes(sample_files["bboxes_2d"][cam_name])
+                bbox_path = sample_files["bboxes_2d"][cam_name]
+                sample_files["bboxes_2d"][cam_name] = load_bounding_boxes(bbox_path) if bbox_path else []
                 sample_files["body_3d"][cam_name] = [load_body_info(p) for p in sample_files["body_3d"][cam_name]]
         # load depth images for each camera
-        for cam_name in self.cameras['depth']:
+        for cam_name in self.cameras.get("depth", {}):
             if sample_files["depth"][cam_name] is not None:
                 sample_files["depth"][cam_name] = load_image(sample_files["depth"][cam_name], image_type="depth")
-        # find nearest lidar
-        lidar_ts, lidar_path = self.find_nearest_lidar(timestamp)
+        # load lidar if available
+        lidar_path = sample_files["lidar"]
         lidar_data = load_pointcloud(lidar_path) if lidar_path is not None else None
         # get pose data
         pose_data = load_poses(sample_files["poses"]) if sample_files["poses"] else None
