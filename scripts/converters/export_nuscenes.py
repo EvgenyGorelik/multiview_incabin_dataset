@@ -181,7 +181,7 @@ if __name__ == "__main__":
         cam_xyz, cam_quat = parse_transform(
             ds.transforms_to_base[ds.frame_id_map[cam_name]]
         )
-        cam_int = ds.cameras["color"][cam_name]["intrinsics"]
+        cam_int = ds.cameras["color"][cam_name].intrinsics
         calibrated_sensor.append(
             {
                 "token": cam_calib_tokens[channel_name],
@@ -202,7 +202,9 @@ if __name__ == "__main__":
     ):
         sample_files = ds.get_sample_files(ts)
 
-        bboxes_3d_path = sample_files["bboxes_3d"][0]
+        if sample_files.lidar is None:
+            raise ValueError("nuScenes export requires LiDAR scans")
+        bboxes_3d_path = sample_files.bboxes_3d_path
         bboxes_3d = load_bboxes_3d(bboxes_3d_path) if bboxes_3d_path else []
         if len(bboxes_3d) == 0:
             continue
@@ -211,7 +213,7 @@ if __name__ == "__main__":
         ego_token = token()
 
         # copy lidar
-        src_lidar = os.path.join(sample_files["lidar"])
+        src_lidar = os.path.join(sample_files.lidar.path)
         pcd = load_pointcloud(src_lidar)
         dst_lidar = os.path.join(
             args.output,
@@ -231,7 +233,7 @@ if __name__ == "__main__":
                 "sample_token": sample_token,
                 "ego_pose_token": ego_token,
                 "calibrated_sensor_token": lidar_calib_token,
-                "timestamp": ts,
+                "timestamp": sample_files.lidar.timestamp,
                 "filename": f"samples/{lidar_channel}/{os.path.basename(src_lidar).replace('.pcd', '.bin')}",
                 "fileformat": "bin",
                 "is_key_frame": True,
@@ -245,7 +247,7 @@ if __name__ == "__main__":
         # copy images
         for modality in ds.cameras["color"].keys():
             cam_name = camera_names[modality]
-            src_img = sample_files["images"][modality]
+            src_img = sample_files.cameras["color"][modality].path
             dst_img = os.path.join(
                 args.output, f"samples/{cam_name}", os.path.basename(src_img)
             )
@@ -260,12 +262,12 @@ if __name__ == "__main__":
                         "sample_token": sample_token,
                         "ego_pose_token": ego_token,
                         "calibrated_sensor_token": cam_calib_tokens[cam_name],
-                        "timestamp": sample_files["timestamps"][modality],
+                        "timestamp": sample_files.cameras["color"][modality].timestamp,
                         "filename": f"samples/{cam_name}/{os.path.basename(src_img)}",
                         "fileformat": "jpg",
                         "is_key_frame": True,
-                        "width": ds.cameras["color"][modality]["cam_info"]["width"],
-                        "height": ds.cameras["color"][modality]["cam_info"]["height"],
+                        "width": ds.cameras["color"][modality].cam_info["width"],
+                        "height": ds.cameras["color"][modality].cam_info["height"],
                         "prev": "",
                         "next": "",
                     }
@@ -309,17 +311,17 @@ if __name__ == "__main__":
         # ------------------------
         for box in bboxes_3d:
             ann_token = token()
-            if box["pose_id"] not in obj_id_instance_map:
-                obj_id_instance_map[box["pose_id"]] = token()
+            if box.obj_id not in obj_id_instance_map:
+                obj_id_instance_map[box.obj_id] = token()
 
-                label = "human.pedestrian.adult"  # box["bbox_label"]
+                label = "human.pedestrian.adult"  # box.bbox_label
 
                 if label not in [c["name"] for c in category]:
                     category.append(
                         {"token": token(), "name": label, "description": ""}
                     )
 
-                inst_token = obj_id_instance_map[box["pose_id"]]
+                inst_token = obj_id_instance_map[box.obj_id]
                 instances.append(
                     {
                         "token": inst_token,
@@ -331,7 +333,7 @@ if __name__ == "__main__":
                     }
                 )
 
-            inst_token = obj_id_instance_map[box["pose_id"]]
+            inst_token = obj_id_instance_map[box.obj_id]
 
             annotations.append(
                 {
@@ -339,9 +341,9 @@ if __name__ == "__main__":
                     "sample_token": sample_token,
                     "instance_token": inst_token,
                     "attribute_tokens": [],
-                    "translation": box["bbox_center"],
-                    "size": box["bbox_size"],
-                    "rotation": quat_to_nuscenes(box["bbox_rotation"]),
+                    "translation": box.bbox_center,
+                    "size": box.bbox_size,
+                    "rotation": quat_to_nuscenes(box.bbox_rotation),
                     "num_lidar_pts": 10,
                     "num_radar_pts": 0,
                     "visibility_token": "1",

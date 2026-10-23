@@ -10,12 +10,16 @@ authors = [
     { name="Evgeny Gorelik", email="evgeny.gorelik@gt-arc.com" }
 ]
 dependencies = [
-    "numpy==1.26.4",
-    "pillow==10.2.0",
-    "tqdm==4.67.3",
-    "scipy==1.17.1",
-    "matplotlib-inline==0.1.7",
-    "opencv-python==4.11.0.86",
+    "numpy>=1.24; python_version < '3.13'",
+    "numpy>=2.1; python_version >= '3.13'",
+    "pillow>=10.2; python_version < '3.13'",
+    "pillow>=11; python_version >= '3.13'",
+    "tqdm>=4.67.3",
+    "scipy>=1.10.1",
+    "matplotlib-inline>=0.1.7",
+    "opencv-python>=4.11.0.86",
+    "PyYAML>=6.0",
+    "plyfile>=1.0",
 ]
 readme = "README.md"
 requires-python = ">=3.8"
@@ -29,5 +33,5 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/EvgenyGorelik/multiview_incabin_dataset"
 
-[tool.setuptools]
-package-dir = {"ndf_dataset" = "ndf_dataset"}
+[tool.setuptools.packages.find]
+include = ["ndf_dataset*"]
